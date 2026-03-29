@@ -104,8 +104,14 @@ function buildDescription(snippet: Snippet): string {
 }
 
 /**
- * Returns true if the Linear issue with the given ID still exists and has not
- * been permanently deleted. Archived issues are treated as still existing.
+ * Returns true if the Linear issue with the given ID still exists and is active.
+ *
+ * Returns false when:
+ *  - The issue was permanently deleted (API throws or returns null)
+ *  - The issue was archived via the Linear UI (archivedAt is set)
+ *
+ * Canceled or completed issues are considered still-existing — they were
+ * intentionally resolved, not deleted.
  */
 export async function issueExists(
   config: LinearConfig,
@@ -114,11 +120,11 @@ export async function issueExists(
   const client = getClient(config.apiKey);
   try {
     const issue = await client.issue(issueId);
-    return issue != null;
+    if (issue == null) return false;
+    // An archived issue means it was deleted/cleaned up via the Linear UI.
+    // Treat it the same as a missing issue so the tool re-creates it.
+    return issue.archivedAt == null;
   } catch {
-    // Any error (not-found, network, etc.) is treated as non-existent so that
-    // a transient failure doesn't silently cause a re-create. The caller should
-    // decide whether to proceed based on context.
     return false;
   }
 }

@@ -42,7 +42,7 @@ program
     "Skip reading/writing the .linear-tickets.json lockfile (allows duplicate tickets)"
   )
   .option(
-    "--no-deleted-check",
+    "--skip-deleted-check",
     "Skip verifying that previously-filed issues still exist in Linear (faster, but won't re-create deleted tickets)"
   )
   .action(async (options) => {
@@ -50,7 +50,7 @@ program
     const team = options.team as string;
     const dryRun = options.dryRun as boolean;
     const useLockfile = options.lockfile as boolean;
-    const checkDeleted = options.deletedCheck as boolean;
+    const checkDeleted = !(options.skipDeletedCheck as boolean);
     const apiKey = process.env.LINEAR_API_KEY ?? "";
 
     // --- Validation ---
