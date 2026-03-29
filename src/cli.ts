@@ -4,7 +4,7 @@ import { Command } from "commander";
 import path from "node:path";
 import { discoverFiles } from "./discover.ts";
 import { extractSnippetsFromFiles } from "./parse.ts";
-import { createIssue, updateIssue } from "./linear.ts";
+import { createIssue, updateIssue, issueExists } from "./linear.ts";
 import {
   readLockfile,
   writeLockfile,
@@ -41,11 +41,16 @@ program
     "--no-lockfile",
     "Skip reading/writing the .linear-tickets.json lockfile (allows duplicate tickets)"
   )
+  .option(
+    "--no-deleted-check",
+    "Skip verifying that previously-filed issues still exist in Linear (faster, but won't re-create deleted tickets)"
+  )
   .action(async (options) => {
     const dir = path.resolve(options.dir as string);
     const team = options.team as string;
     const dryRun = options.dryRun as boolean;
     const useLockfile = options.lockfile as boolean;
+    const checkDeleted = options.deletedCheck as boolean;
     const apiKey = process.env.LINEAR_API_KEY ?? "";
 
     // --- Validation ---
@@ -97,6 +102,47 @@ program
       }
     }
 
+    // --- Detect deleted issues among unchanged snippets ---
+    // Track which re-creates are due to deletion (for display purposes).
+    const recreateIds = new Set<string>();
+
+    if (useLockfile && checkDeleted && skipped.length > 0 && apiKey) {
+      process.stdout.write(
+        `Verifying ${skipped.length} unchanged snippet(s) against Linear ... `
+      );
+
+      const checks = await Promise.all(
+        skipped.map(async (s) => {
+          const entry = lockfile.entries[s.stableId];
+          const exists = await issueExists({ apiKey, defaultTeam: team }, entry.issueId);
+          return { snippet: s, exists };
+        })
+      );
+
+      const deleted = checks.filter((c) => !c.exists).map((c) => c.snippet);
+      const intact = checks.filter((c) => c.exists).map((c) => c.snippet);
+
+      console.log(
+        deleted.length > 0
+          ? `${deleted.length} deleted, ${intact.length} intact.`
+          : "all intact."
+      );
+
+      // Promote deleted snippets to re-create; keep only intact ones in skipped.
+      skipped.length = 0;
+      intact.forEach((s) => skipped.push(s));
+      deleted.forEach((s) => {
+        recreateIds.add(s.stableId);
+        toCreate.push(s);
+      });
+
+      if (deleted.length > 0) console.log();
+    } else if (useLockfile && checkDeleted && skipped.length > 0 && !apiKey && dryRun) {
+      console.log(
+        `Note: skipping deleted-issue check for ${skipped.length} unchanged snippet(s) — no API key available in dry-run mode.\n`
+      );
+    }
+
     if (skipped.length > 0) {
       console.log(`Skipping ${skipped.length} unchanged snippet(s):`);
       for (const s of skipped) {
@@ -120,9 +166,11 @@ program
     for (const snippet of toCreate) {
       const label = `"${snippet.meta.title}"`;
       const location = `${path.relative(dir, snippet.file)}:${snippet.startLine}`;
+      const isRecreate = recreateIds.has(snippet.stableId);
+      const verb = isRecreate ? "Re-create" : "Create";
 
       if (dryRun) {
-        console.log(`[dry-run] Would create: ${label}`);
+        console.log(`[dry-run] Would ${verb.toLowerCase()}: ${label}${isRecreate ? " (deleted in Linear)" : ""}`);
         console.log(`          File:     ${location}`);
         console.log(`          Priority: ${snippet.meta.priority}`);
         if (snippet.meta.labels.length > 0) {
@@ -136,7 +184,7 @@ program
       }
 
       try {
-        process.stdout.write(`Creating: ${label} ... `);
+        process.stdout.write(`${verb}:  ${label} ... `);
         const issue = await createIssue(linearConfig, snippet);
 
         lockfile = recordEntry(lockfile, {
@@ -250,8 +298,14 @@ program
   .command("status")
   .description("Show which snippets have already been filed vs. pending")
   .option("-d, --dir <path>", "Root directory to scan", process.cwd())
+  .option(
+    "--check-deleted",
+    "Verify each filed issue still exists in Linear (requires LINEAR_API_KEY)"
+  )
   .action(async (options) => {
     const dir = path.resolve(options.dir as string);
+    const checkDeleted = options.checkDeleted as boolean;
+    const apiKey = process.env.LINEAR_API_KEY ?? "";
     const files = await discoverFiles({ dir });
     const snippets = await extractSnippetsFromFiles(files);
     const lockfile = await readLockfile(dir);
@@ -260,19 +314,48 @@ program
     const changed = filed.filter((s) => hasChanged(lockfile, s.stableId, s.contentHash));
     const pending = snippets.filter((s) => !isAlreadyFiled(lockfile, s.stableId));
 
+    // Optionally verify existence of filed issues against the Linear API.
+    const deletedIds = new Set<string>();
+    if (checkDeleted && filed.length > 0) {
+      if (!apiKey) {
+        console.warn("Warning: --check-deleted requires LINEAR_API_KEY to be set — skipped.\n");
+      } else {
+        process.stdout.write(`Verifying ${filed.length} filed issue(s) against Linear ... `);
+        const checks = await Promise.all(
+          filed.map(async (s) => {
+            const entry = lockfile.entries[s.stableId];
+            const exists = await issueExists({ apiKey, defaultTeam: "" }, entry.issueId);
+            return { stableId: s.stableId, exists };
+          })
+        );
+        checks.filter((c) => !c.exists).forEach((c) => deletedIds.add(c.stableId));
+        console.log(
+          deletedIds.size > 0
+            ? `${deletedIds.size} deleted, ${filed.length - deletedIds.size} intact.`
+            : "all intact."
+        );
+        console.log();
+      }
+    }
+
     console.log(
       `Total: ${snippets.length} snippet(s) — ` +
         `${pending.length} pending, ` +
-        `${filed.length - changed.length} up to date, ` +
-        `${changed.length} changed\n`
+        `${filed.length - changed.length - deletedIds.size} up to date, ` +
+        `${changed.length} changed` +
+        (deletedIds.size > 0 ? `, ${deletedIds.size} deleted in Linear` : "") +
+        "\n"
     );
 
     if (filed.length > 0) {
       console.log("Filed:");
       for (const s of filed) {
         const entry = lockfile.entries[s.stableId];
-        const flag = hasChanged(lockfile, s.stableId, s.contentHash) ? " [changed]" : "";
-        console.log(`  ✓ "${s.meta.title}"${flag} → ${entry.issueUrl}`);
+        const flags: string[] = [];
+        if (hasChanged(lockfile, s.stableId, s.contentHash)) flags.push("changed");
+        if (deletedIds.has(s.stableId)) flags.push("deleted in Linear");
+        const flagStr = flags.length > 0 ? ` [${flags.join(", ")}]` : "";
+        console.log(`  ✓ "${s.meta.title}"${flagStr} → ${entry.issueUrl}`);
       }
       console.log();
     }

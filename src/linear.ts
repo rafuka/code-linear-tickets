@@ -104,6 +104,26 @@ function buildDescription(snippet: Snippet): string {
 }
 
 /**
+ * Returns true if the Linear issue with the given ID still exists and has not
+ * been permanently deleted. Archived issues are treated as still existing.
+ */
+export async function issueExists(
+  config: LinearConfig,
+  issueId: string
+): Promise<boolean> {
+  const client = getClient(config.apiKey);
+  try {
+    const issue = await client.issue(issueId);
+    return issue != null;
+  } catch {
+    // Any error (not-found, network, etc.) is treated as non-existent so that
+    // a transient failure doesn't silently cause a re-create. The caller should
+    // decide whether to proceed based on context.
+    return false;
+  }
+}
+
+/**
  * Updates an existing Linear issue to reflect the current state of a snippet.
  * Re-resolves labels and assignee in case they changed in the metadata.
  */
