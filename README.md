@@ -1,5 +1,7 @@
 # code-linear-tickets
 
+> Created with Cursor + Sonnet 4.6
+
 Scan JS/TS/JSX/TSX source files for annotated code snippets and automatically create Linear issues from them.
 
 ## How it works
@@ -22,6 +24,60 @@ if (!result.ok) {
 ```
 
 Running the tool against this file creates a Linear issue titled **"Fix broken auth redirect after OAuth flow"** with the code block embedded in the description.
+
+## Examples
+
+**Minimal — just a title:**
+
+```ts
+// @linear-start
+// title: Remove console.log calls before release
+console.log("DEBUG user:", user);
+console.log("DEBUG token:", token);
+// @linear-end
+```
+
+**Bug with priority and labels:**
+
+```ts
+// @linear-start
+// id: cart-total-rounding
+// title: Cart total rounds down instead of up on fractional cents
+// priority: high
+// labels: bug, payments
+const total = Math.floor(items.reduce((sum, item) => sum + item.price, 0));
+// @linear-end
+```
+
+**Tech debt assigned to a specific person:**
+
+```ts
+// @linear-start
+// id: migrate-class-components
+// title: Migrate remaining class components to functional
+// priority: medium
+// labels: tech-debt, react
+// assignee: alice@example.com
+class LegacyModal extends React.Component {
+  render() {
+    return <div>{this.props.children}</div>;
+  }
+}
+// @linear-end
+```
+
+**Cross-team ticket (overrides the default `--team` flag):**
+
+```ts
+// @linear-start
+// id: api-rate-limit-docs
+// title: Document rate limiting behaviour in the public API reference
+// priority: low
+// labels: docs
+// team: DOCS
+fetchWithRetry(endpoint, { retries: 3 });
+// @linear-end
+```
 
 ## Authentication
 
