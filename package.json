@@ -1,0 +1,29 @@
+{
+  "name": "code-linear-tickets",
+  "version": "1.0.0",
+  "description": "Extract annotated code snippets and create Linear tickets from them",
+  "type": "module",
+  "bin": {
+    "code-linear-tickets": "./src/cli.ts"
+  },
+  "scripts": {
+    "start": "tsx src/cli.ts",
+    "dev": "tsx watch src/cli.ts"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.24.0",
+    "@babel/traverse": "^7.24.0",
+    "@babel/types": "^7.24.0",
+    "@linear/sdk": "^26.0.0",
+    "commander": "^12.0.0",
+    "dotenv": "^16.4.0",
+    "fast-glob": "^3.3.2",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/babel__traverse": "^7.20.0",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}

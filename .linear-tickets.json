@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "entries": {
+    "7279a0c93a0929d2": {
+      "hash": "7279a0c93a0929d2",
+      "issueId": "adb08f8b-9bd7-4676-b390-133bb56888ea",
+      "issueUrl": "https://linear.app/code-linear/issue/COD-5/fix-broken-auth-redirect-after-oauth-flow",
+      "title": "Fix broken auth redirect after OAuth flow",
+      "file": "/home/rafael/code-linear-tickets/fixtures/example.tsx",
+      "startLine": 3,
+      "createdAt": "2026-03-28T23:16:16.598Z"
+    },
+    "14890177284b5d16": {
+      "hash": "14890177284b5d16",
+      "issueId": "7fdb98ed-9c25-4403-9472-4b4c13003c3b",
+      "issueUrl": "https://linear.app/code-linear/issue/COD-6/refactor-user-settings-form-to-use-react-hook-form",
+      "title": "Refactor user settings form to use react-hook-form",
+      "file": "/home/rafael/code-linear-tickets/fixtures/example.tsx",
+      "startLine": 13,
+      "createdAt": "2026-03-28T23:16:17.430Z"
+    },
+    "e9face0f484a917d": {
+      "hash": "e9face0f484a917d",
+      "issueId": "7414abd0-30c8-4c68-84a6-712999709ec5",
+      "issueUrl": "https://linear.app/code-linear/issue/COD-7/fix-broken-auth-redirect-after-oauth-flow",
+      "title": "Fix broken auth redirect after OAuth flow",
+      "file": "/home/rafael/code-linear-tickets/fixtures/example.tsx",
+      "startLine": 3,
+      "createdAt": "2026-03-28T23:17:14.090Z"
+    },
+    "auth-redirect-fix": {
+      "stableId": "auth-redirect-fix",
+      "contentHash": "0115b9c1dfe570fa",
+      "issueId": "d45ae959-60d8-437c-8870-6426f493131b",
+      "issueUrl": "https://linear.app/code-linear/issue/COD-8/fix-broken-auth-redirect-after-oauth-flow",
+      "title": "Fix broken auth redirect after OAuth flow",
+      "file": "/home/rafael/code-linear-tickets/fixtures/example.tsx",
+      "startLine": 5,
+      "createdAt": "2026-03-29T00:17:42.425Z"
+    },
+    "user-settings-rhf-refactor": {
+      "stableId": "user-settings-rhf-refactor",
+      "contentHash": "d4c07348144f1523",
+      "issueId": "2ef8d23f-d566-4661-bc95-2951a116594a",
+      "issueUrl": "https://linear.app/code-linear/issue/COD-9/refactor-user-settings-form-to-use-react-hook-form",
+      "title": "Refactor user settings form to use react-hook-form",
+      "file": "/home/rafael/code-linear-tickets/fixtures/example.tsx",
+      "startLine": 17,
+      "createdAt": "2026-03-29T00:17:43.862Z"
+    }
+  }
+}

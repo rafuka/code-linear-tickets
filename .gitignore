@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Secrets
+.env
+
+# Lockfile (generated — commit this if you want to share filed state across your team)
+.linear-tickets.json
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
